@@ -15,6 +15,7 @@ module Rubydora
     include Rubydora::ModelsMixin
     include Rubydora::RelationshipsMixin
     include Rubydora::AuditTrail
+    include Rubydora::States
 
     extend Deprecation
 
@@ -41,7 +42,7 @@ module Rubydora
     end
 
     def state= val
-      raise ArgumentError, "Allowed values for state are 'I', 'A' and 'D'. You provided '#{val}'" unless ['I', 'A', 'D'].include?(val)
+      raise ArgumentError, "Allowed values for state are #{STATES}. You provided '#{val}'" unless STATES.include?(val)
       state_will_change! unless val == state
       @state = val
     end

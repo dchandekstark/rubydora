@@ -436,27 +436,28 @@ describe Rubydora::DigitalObject do
       end
       it "should mark the object as changed after setting" do
         @mock_repository.should_receive(:object).with(:pid=>"pid").and_raise(RestClient::ResourceNotFound)
-        subject.state= 'D'
+        subject.state= Rubydora::DigitalObject::DELETED_STATE
         subject.should be_changed
       end
 
       it "should raise an error when setting an invalid value" do
-        expect {subject.state= 'Q'}.to raise_error ArgumentError, "Allowed values for state are 'I', 'A' and 'D'. You provided 'Q'"
+        expect {subject.state= 'Q'}.to raise_error ArgumentError, "Allowed values for state are #{Rubydora::DigitalObject::STATES}. You provided 'Q'"
       end
 
       it "should not mark the object as changed if the value does not change" do
-        subject.should_receive(:state) { 'A' }
-        subject.state= 'A'
+        subject.should_receive(:state) { Rubydora::DigitalObject::ACTIVE_STATE }
+        subject.state= Rubydora::DigitalObject::ACTIVE_STATE
         subject.should_not be_changed
       end
 
       it "should appear in the save request" do 
-        @mock_repository.should_receive(:ingest).with(hash_including(:state => 'A'))
+        @mock_repository.should_receive(:ingest).with(hash_including(:state => Rubydora::DigitalObject::ACTIVE_STATE))
         @mock_repository.should_receive(:object).with(:pid=>"pid").and_raise(RestClient::ResourceNotFound)
-        subject.state='A'
+        subject.state=Rubydora::DigitalObject::ACTIVE_STATE
         subject.save
       end
     end
+
   end
 
   describe "#ownerId" do

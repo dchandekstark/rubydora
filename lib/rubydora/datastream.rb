@@ -9,15 +9,22 @@ module Rubydora
     define_model_callbacks :initialize, :only => :after
 
     include ActiveModel::Dirty
+    include Rubydora::States
 
     class_attribute :eager_load_datastream_content
     self.eager_load_datastream_content = false
 
     attr_reader :digital_object, :dsid
 
+    MANAGED_CONTENT = 'M'
+    INLINE_XML = 'X'
+    EXTERNALLY_REFERENCED_CONTENT = 'E'
+    REDIRECTED_CONTENT = 'R'
+    CONTROL_GROUPS = [MANAGED_CONTENT, INLINE_XML, EXTERNALLY_REFERENCED_CONTENT, REDIRECTED_CONTENT]
+
     # mapping datastream attributes (and api parameters) to datastream profile names
     DS_ATTRIBUTES = {:controlGroup => :dsControlGroup, :dsLocation => :dsLocation, :altIDs => nil, :dsLabel => :dsLabel, :versionable => :dsVersionable, :dsState => :dsState, :formatURI => :dsFormatURI, :checksumType => :dsChecksumType, :checksum => :dsChecksum, :mimeType => :dsMIME, :logMessage => nil, :ignoreContent => nil, :lastModifiedDate => nil, :content => nil, :asOfDateTime => nil}
-    DS_DEFAULT_ATTRIBUTES = { :controlGroup => 'M', :dsState => 'A', :versionable => true }
+    DS_DEFAULT_ATTRIBUTES = { :controlGroup => MANAGED_CONTENT, :dsState => ACTIVE_STATE, :versionable => true }
 
     define_attribute_methods DS_ATTRIBUTES.keys
 
@@ -177,10 +184,10 @@ module Rubydora
     end
 
     def content_changed?
-      return false if ['E','R'].include? controlGroup
+      return false if external? or redirect?
       return true if new? and !local_or_remote_content(false).blank? # new datastreams must have content
 
-      if controlGroup == "X"
+      if external?
         if self.eager_load_datastream_content
           return !EquivalentXml.equivalent?(Nokogiri::XML(content), Nokogiri::XML(datastream_content))
         else
@@ -205,7 +212,7 @@ module Rubydora
       return true unless new?
 
       # type E and R objects should have content.
-      return !dsLocation.blank? if ['E','R'].include? controlGroup
+      return !dsLocation.blank? if external? or redirect?
 
       # if we've set content, then we have content.
 
@@ -366,25 +373,23 @@ module Rubydora
 
     # @return [boolean] is this an external datastream?
     def external?
-      controlGroup == 'E'
+      controlGroup == EXTERNALLY_REFERENCED_CONTENT
     end
 
     # @return [boolean] is this a redirect datastream?
     def redirect?
-      controlGroup == 'R'
+      controlGroup == REDIRECTED_CONTENT
     end
 
     # @return [boolean] is this a managed datastream?
     def managed?
-      controlGroup == 'M'
+      controlGroup == MANAGED_CONTENT
     end
 
     # @return [boolean] is this an inline datastream?
     def inline?
-      controlGroup == 'X'
+      controlGroup == INLINE_XML
     end
-
-    
 
     protected
     # datastream parameters 

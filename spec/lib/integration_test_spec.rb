@@ -93,7 +93,7 @@ describe "Integration testing against a live Fedora repository", :integration =>
   it "should create a redirect datastream" do
     obj = @repository.find_or_initialize('test:1')
     ds = obj.datastreams["Redirect"]
-    ds.controlGroup = "R"
+    ds.controlGroup = Rubydora::Datastream::REDIRECTED_CONTENT
     ds.dsLocation = "http://example.org"
     ds.save
   end
@@ -116,8 +116,8 @@ describe "Integration testing against a live Fedora repository", :integration =>
     ds.versionID.should == "Test.0"
 
     (Time.now - ds.createDate).should be < 60*60 # 1 hour
-    ds.state.should == "A"
-    ds.controlGroup.should == "M"
+    ds.state.should == Rubydora::Datastream::ACTIVE_STATE
+    ds.should be_managed
     ds.size.should be > 100
   end
   end
@@ -157,7 +157,7 @@ describe "Integration testing against a live Fedora repository", :integration =>
   it "should save IO-based datastreams" do
     obj = @repository.find_or_initialize('test:1')
     ds = obj.datastreams['gemspec']
-    ds.controlGroup = 'M'
+    ds.controlGroup = Rubydora::Datastream::MANAGED_CONTENT
     ds.content = File.open('rubydora.gemspec', 'r')
     obj.save
 
@@ -210,7 +210,7 @@ describe "Integration testing against a live Fedora repository", :integration =>
        ds3 = obj.datastreams['datastream_to_change_properties']
        ds3.content = 'asdf'
        ds3.versionable = true
-       ds3.dsState = 'I'
+       ds3.dsState = Rubydora::Datastream::INACTIVE_STATE
        ds3.save
 
        @repository.transaction do |t|
@@ -219,7 +219,7 @@ describe "Integration testing against a live Fedora repository", :integration =>
          ds2.content = '1234'
          ds2.save
 
-         @repository.set_datastream_options :pid => obj.pid, :dsid => 'datastream_to_change_properties', :state => 'A'
+         @repository.set_datastream_options :pid => obj.pid, :dsid => 'datastream_to_change_properties', :state => Rubydora::Datastream::ACTIVE_STATE
          @repository.set_datastream_options :pid => obj.pid, :dsid => 'datastream_to_change_properties', :versionable => false
 
          ds4 = obj.datastreams['datastream_to_create']
@@ -234,7 +234,7 @@ describe "Integration testing against a live Fedora repository", :integration =>
        obj.datastreams.keys.should include('datastream_to_delete')
        obj.datastreams['datastream_to_change'].content.should == 'asdf'
        obj.datastreams['datastream_to_change_properties'].versionable.should == true
-       obj.datastreams['datastream_to_change_properties'].dsState.should == 'I'
+       obj.datastreams['datastream_to_change_properties'].state.should == Rubydora::Datastream::INACTIVE_STATE
     end
 
     it "should work on relationships" do

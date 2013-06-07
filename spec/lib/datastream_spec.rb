@@ -75,30 +75,30 @@ describe Rubydora::Datastream do
     end
 
     it "should have default values" do
-      @datastream.controlGroup == "M"
-      @datastream.dsState.should == "A"
+      @datastream.controlGroup == Rubydora::Datastream::MANAGED_CONTENT
+      @datastream.dsState.should == Rubydora::Datastream::ACTIVE_STATE
       @datastream.versionable.should be_true
       @datastream.changed.should be_empty
     end
 
     it "should allow default values to by specified later" do
-      @datastream.dsState = 'A'
-      @datastream.default_attributes = { :controlGroup => 'E', :dsState => 'I' }
-      @datastream.controlGroup.should == 'E'
-      @datastream.dsState.should == 'A'
+      @datastream.dsState = Rubydora::Datastream::ACTIVE_STATE
+      @datastream.default_attributes = { :controlGroup => Rubydora::Datastream::EXTERNALLY_REFERENCED_CONTENT, :dsState => Rubydora::Datastream::INACTIVE_STATE }
+      @datastream.controlGroup.should == Rubydora::Datastream::EXTERNALLY_REFERENCED_CONTENT
+      @datastream.dsState.should == Rubydora::Datastream::ACTIVE_STATE
     end
 
     describe "external?" do
       it "should test against controlGroup" do
         @datastream.should_not be_external
-        @datastream.controlGroup = "E"
+        @datastream.controlGroup = Rubydora::Datastream::EXTERNALLY_REFERENCED_CONTENT
         @datastream.should be_external
       end
     end
     describe "redirect?" do
       it "should test against controlGroup" do
         @datastream.should_not be_redirect
-        @datastream.controlGroup = "R"
+        @datastream.controlGroup = Rubydora::Datastream::REDIRECTED_CONTENT
         @datastream.should be_redirect
       end
     end
@@ -106,14 +106,14 @@ describe Rubydora::Datastream do
       it "should test against controlGroup" do
         # Managed is default
         @datastream.should be_managed
-        @datastream.controlGroup = "X"
+        @datastream.controlGroup = Rubydora::Datastream::INLINE_XML
         @datastream.should_not be_managed
       end
     end
     describe "inline?" do
       it "should test against controlGroup" do
         @datastream.should_not be_inline
-        @datastream.controlGroup = "X"
+        @datastream.controlGroup = Rubydora::Datastream::INLINE_XML
         @datastream.should be_inline
       end
     end
@@ -135,13 +135,13 @@ describe Rubydora::Datastream do
 
     it "should call the appropriate api on save" do
       @datastream.stub(:content => 'content')
-      @mock_repository.should_receive(:add_datastream).with(hash_including(:content => 'content', :pid => 'pid', :dsid => 'dsid', :controlGroup => 'M', :dsState => 'A'))
+      @mock_repository.should_receive(:add_datastream).with(hash_including(:content => 'content', :pid => 'pid', :dsid => 'dsid', :controlGroup => Rubydora::Datastream::MANAGED_CONTENT, :dsState => Rubydora::Datastream::ACTIVE_STATE))
       @datastream.save
     end
 
     it "should be able to override defaults" do
-      @mock_repository.should_receive(:add_datastream).with(hash_including(:controlGroup => 'E'))
-      @datastream.controlGroup = 'E'
+      @mock_repository.should_receive(:add_datastream).with(hash_including(:controlGroup => Rubydora::Datastream::EXTERNALLY_REFERENCED_CONTENT))
+      @datastream.controlGroup = Rubydora::Datastream::EXTERNALLY_REFERENCED_CONTENT
       @datastream.dsLocation = "uri:asdf"
       @datastream.save
     end
@@ -313,7 +313,7 @@ describe Rubydora::Datastream do
             <dsLabel>label</dsLabel>
           </datastreamProfile>
         XML
-        @datastream = Rubydora::Datastream.new @mock_object, 'dsid', :controlGroup => 'X'
+        @datastream = Rubydora::Datastream.new @mock_object, 'dsid', :controlGroup => Rubydora::Datastream::INLINE_XML
       end
       it "should not be changed when the new content is the same as the existing content (when eager-loading is enabled)" do
         @mock_repository.stub(:datastream_dissemination).with(hash_including(:pid => 'pid', :dsid => 'dsid')).and_return('<xml>test</xml>') 
@@ -349,7 +349,7 @@ describe Rubydora::Datastream do
     it "should have content if it has a dsLocation" do
 
       subject.dsLocation = "urn:abc"
-      subject.controlGroup = 'E'
+      subject.controlGroup = Rubydora::Datastream::EXTERNALLY_REFERENCED_CONTENT
       subject.should have_content     
     end
 
@@ -771,7 +771,7 @@ describe Rubydora::Datastream do
         @datastream = Rubydora::Datastream.new @mock_object, 'dsid'
         @datastream.stub(:new? => false)
         @datastream.stub(:content_changed? => false)
-        @datastream.stub(:profile) { {'dsMIME' => 'application/rdf+xml', 'dsChecksumType' =>'DISABLED', 'dsVersionable'=>true, 'dsControlGroup'=>'M', 'dsState'=>'A'} }
+        @datastream.stub(:profile) { {'dsMIME' => 'application/rdf+xml', 'dsChecksumType' =>'DISABLED', 'dsVersionable'=>true, 'dsControlGroup'=>Rubydora::Datastream::MANAGED_CONTENT, 'dsState'=>Rubydora::Datastream::ACTIVE_STATE} }
       end
       it "should not set unchanged values except for mimeType" do
         @datastream.send(:to_api_params).should == {:mimeType=>'application/rdf+xml'}
@@ -779,8 +779,8 @@ describe Rubydora::Datastream do
       it "should send changed params except those set to nil" do
         @datastream.dsLabel = nil
         @datastream.mimeType = 'application/json'
-        @datastream.controlGroup = 'X'
-        @datastream.send(:to_api_params).should == {:controlGroup=>"X", :mimeType=>"application/json"}
+        @datastream.controlGroup = Rubydora::Datastream::INLINE_XML
+        @datastream.send(:to_api_params).should == {:controlGroup=>Rubydora::Datastream::INLINE_XML, :mimeType=>"application/json"}
       end
     end
 
@@ -793,11 +793,11 @@ describe Rubydora::Datastream do
         @datastream.stub(:profile) { {} }
       end
       it "should compile parameters to hash" do
-        @datastream.send(:to_api_params).should == {:versionable=>true, :controlGroup=>"M", :dsState=>"A", :content => '123' }
+        @datastream.send(:to_api_params).should == {:versionable=>true, :controlGroup=>Rubydora::Datastream::MANAGED_CONTENT, :dsState=>Rubydora::Datastream::ACTIVE_STATE, :content => '123' }
       end
       it "should not send parameters that are set to nil" do
         @datastream.dsLabel = nil
-        @datastream.send(:to_api_params).should == {:versionable=>true, :controlGroup=>"M", :dsState=>"A", :content => '123' }
+        @datastream.send(:to_api_params).should == {:versionable=>true, :controlGroup=>Rubydora::Datastream::MANAGED_CONTENT, :dsState=>Rubydora::Datastream::ACTIVE_STATE, :content => '123' }
       end
     end
   end

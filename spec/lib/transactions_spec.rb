@@ -69,14 +69,14 @@ describe Rubydora::Transactions do
     it "modify_object" do
       subject.client.stub_chain(:[], :put).and_return 'asdf'
 
-      mock_object = double('Rubydora::DigitalObject', :state => 'A', :ownerId => '567', :logMessage => 'dfghj')
+      mock_object = double('Rubydora::DigitalObject', :state => Rubydora::DigitalObject::ACTIVE_STATE, :ownerId => '567', :logMessage => 'dfghj')
       subject.should_receive(:find).with('asdf').and_return mock_object
       
 
       subject.transaction do |t|
-        subject.modify_object :pid => 'asdf', :state => 'I', :ownerId => '123', :logMessage => 'changing asdf'
+        subject.modify_object :pid => 'asdf', :state => Rubydora::DigitalObject::INACTIVE_STATE, :ownerId => '123', :logMessage => 'changing asdf'
 
-        subject.should_receive(:modify_object).with(hash_including(:pid => 'asdf', :state => 'A', :ownerId => '567', :logMessage => 'reverting'))
+        subject.should_receive(:modify_object).with(hash_including(:pid => 'asdf', :state => Rubydora::DigitalObject::ACTIVE_STATE, :ownerId => '567', :logMessage => 'reverting'))
         t.rollback
       end
     end

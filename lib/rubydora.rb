@@ -15,6 +15,7 @@ module Rubydora
   autoload :ArrayWithCallback, "rubydora/array_with_callback"
   autoload :Transactions, "rubydora/transactions"
   autoload :AuditTrail, "rubydora/audit_trail"
+  autoload :States, "rubydora/states"
 
   require 'csv'
   require 'time'
