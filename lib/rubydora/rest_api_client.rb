@@ -343,12 +343,11 @@ module Rubydora
       run_hook :before_add_datastream, :pid => pid, :dsid => dsid, :file => file, :options => options
       str = file.respond_to?(:read) ? file.read : file
       file.rewind if file.respond_to?(:rewind)
-      puts client[datastream_url(pid, dsid, query_options)].inspect
       begin
         client[datastream_url(pid, dsid, query_options)].post(str, :content_type => content_type.to_s, :multipart => true)
       rescue Errno::EPIPE => broken_pipe
         raise unless retries > 0
-        logger.error "add_datastream failed due to broken pipe signal (EPIPE)" 
+        logger.error "add_datastream failed due to broken pipe signal (Errno::EPIPE)" 
         logger.debug "Sleeping for #{sleep 1} second(s) before trying again ..."
         retries -= 1
         retry 
