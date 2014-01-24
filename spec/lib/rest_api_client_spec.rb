@@ -227,6 +227,13 @@ describe Rubydora::RestApiClient do
         lambda {file.read}.should_not raise_error
       end
     end
+
+    describe "when it encounters a broken pipe" do
+      it "should retry 2 times by default" do
+        RestClient::Resource.any_instance.stub(:post).and_raise(Errno::EPIPE)
+        expect { @mock_repository.add_datastream :pid => 'mypid', :dsid => 'aaa' }.to raise_error(Errno::EPIPE)
+      end
+    end
   end
 
   describe "modify datastream" do

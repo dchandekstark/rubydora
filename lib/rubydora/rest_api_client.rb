@@ -332,6 +332,7 @@ module Rubydora
     # @option options [String] :dsid
     # @return [String]
     def add_datastream options = {}
+      retries = options.delete(:retries) || 2
       query_options = options.dup
       pid = query_options.delete(:pid)
       dsid = query_options.delete(:dsid)
@@ -342,7 +343,16 @@ module Rubydora
       run_hook :before_add_datastream, :pid => pid, :dsid => dsid, :file => file, :options => options
       str = file.respond_to?(:read) ? file.read : file
       file.rewind if file.respond_to?(:rewind)
-      client[datastream_url(pid, dsid, query_options)].post(str, :content_type => content_type.to_s, :multipart => true)
+      puts client[datastream_url(pid, dsid, query_options)].inspect
+      begin
+        client[datastream_url(pid, dsid, query_options)].post(str, :content_type => content_type.to_s, :multipart => true)
+      rescue Errno::EPIPE => broken_pipe
+        raise unless retries > 0
+        logger.error "add_datastream failed due to broken pipe signal (EPIPE)" 
+        logger.debug "Sleeping for #{sleep 1} second(s) before trying again ..."
+        retries -= 1
+        retry 
+      end
     rescue Exception => exception
         rescue_with_handler(exception) || raise
     end
