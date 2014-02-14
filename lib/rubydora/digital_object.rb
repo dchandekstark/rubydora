@@ -200,12 +200,18 @@ module Rubydora
           unless p.empty?
             mod_time = repository.modify_object p.merge(:pid => pid)
             self.lastModifiedDate = mod_time
-            changed_attributes.clear
           end
         end
       end
 
-      self.datastreams.select { |dsid, ds| ds.changed? }.each { |dsid, ds| ds.save }
+      self.datastreams.select { |dsid, ds| ds.changed? }.each do |dsid, ds|
+        ds.save
+        mod_time = ProfileParser.canonicalize_date(ds.dsCreateDate)
+        if mod_time > self.lastModifiedDate
+          self.lastModifiedDate = mod_time
+        end
+      end
+      changed_attributes.clear
       self
     end
 
